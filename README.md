@@ -1,70 +1,233 @@
-# Getting Started with Create React App
+# All Abou React Router
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+```js
+import { BrowserRouter } from 'react-router-dom';
+import { Routes, Route } from 'react-router-dom'
+import { NavLink, Link, useNavigate } from 'react-router-dom'
 
-## Available Scripts
+import { useParams, useSearchParams, Outlet } from 'react-router-dom'
 
-In the project directory, you can run:
+<Outlet/>
 
-### `npm start`
+const navigate = useNavigate();
+navigate('/')
+navigate('/about-us')
+navigate('/create-account?aff_id=123&sub_id=900');
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+const params = useParams();
+params.userId
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+const [searchParams, setSearchParams] = useSearchParams();
+searchParams.get('name');
 
-### `npm test`
+---
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
 
-### `npm run build`
+<li><Link to="/">Home</Link></li>
+<li><NavLink to="/about-us" style={navActiveStyle}>About Us</NavLink></li>
+```
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+### index.js
+```js
+root.render(
+  <React.StrictMode>
+    <BrowserRouter>
+      <App />
+    </BrowserRouter>
+  </React.StrictMode>
+);
+```
+### Create a separate file for all routes
+```js
+import React from 'react'
+import { Routes, Route } from 'react-router-dom'
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+import Home from '../pages/Home';
+import AboutUs from '../pages/AboutUs';
+import OurMission from '../pages/OurMission'
+import OurVision from '../pages/OurVision'
+import OurProfile from '../pages/OurProfile'
+import OurStory from '../pages/OurStory'
+import ContactUs from '../pages/ContactUs'
+import SignUp from '../pages/SignUp'
+import SignIn from '../pages/SignIn'
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+import NotFound from '../exceptions/NotFound'
 
-### `npm run eject`
+import Product from '../pages/products/Product'
+import NewProduct from '../pages/products/NewProduct'
+import OldProduct from '../pages/products/OldProduct'
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+import Users from '../pages/users/Users'
+import UserDetails from '../pages/users/UserDetails'
+import UserProfile from '../pages/users/UserProfile'
+import UserSkill from '../pages/users/UserSkill'
+import UserContact from '../pages/users/UserContact'
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+import { RequireAuth } from '../middleware/RequireAuth'
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
 
-## Learn More
+const LazyUserSearch = React.lazy(() => import ('../pages/users/UserSearch'));
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+const AppRoute = () => {
+  return (
+    <>
+        <Routes>
+            <Route path="/" element={<Home />}></Route>
+            <Route path="about-us" element={<AboutUs />}></Route>
+            <Route path="our-mission" element={<OurMission />}></Route>
+            <Route path="our-vision" element={<OurVision />}></Route>
+            <Route path="our-profile" element={<OurProfile />}></Route>
+            <Route path="our-story" element={<OurStory />}></Route>
+            <Route path="contact-us" element={<ContactUs />}></Route>
+            <Route path="login" element={<SignIn />}></Route>
+            <Route path="create-account" element={<SignUp />}></Route>
+            
+            <Route path="products" element={<Product />}>
+              <Route index element={<NewProduct />}></Route>
+              <Route path="new-products" element={<NewProduct />}></Route>
+              <Route path="old-products" element={<OldProduct />}></Route>
+            </Route>
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+            <Route path="users" element={<RequireAuth><Users /></RequireAuth>}></Route>
+            <Route path="users/:userId" element={<RequireAuth><UserDetails /></RequireAuth>}>
+              {/* <Route index element={<UserContact />}></Route> */}
+              <Route path="profile" element={<UserProfile />}></Route>
+              <Route path="skills" element={<UserSkill />}></Route>
+              <Route path="contact" element={<UserContact />}></Route>
+            </Route>
 
-### Code Splitting
+            <Route path="search-users" element={<RequireAuth><React.Suspense fallback='loading.....'><LazyUserSearch /></React.Suspense></RequireAuth>}></Route>
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+            <Route path="*" element={<NotFound />}></Route>
+        </Routes>
+    </>
+  )
+}
 
-### Analyzing the Bundle Size
+export default AppRoute
+```
+### Auth.js
+```js
+import { useState, createContext, useContext } from 'react'
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
+const AuthContext = createContext(null)
 
-### Making a Progressive Web App
+export const AuthProvider = ({ children }) => {
+  const [user, setUser] = useState(null)
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
+  const login = user => {
+    setUser(user)
+  }
 
-### Advanced Configuration
+  const logout = () => {
+    setUser(null)
+  }
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
+  return (
+    <AuthContext.Provider value={{ user, login, logout }}>
+      {children}
+    </AuthContext.Provider>
+  )
+}
 
-### Deployment
+export const useAuth = () => {
+  return useContext(AuthContext)
+}
+```
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
+### Login.jsx
+```js
+import React, { useState } from 'react'
+import { useNavigate, useLocation } from 'react-router-dom'
+import { useAuth } from '../middleware/Auth';
 
-### `npm run build` fails to minify
+const SignIn = () => {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const [username, setUsername] = useState('');
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+  const auth = useAuth();
+
+  const redirectTo = location.state?.path || '/'
+
+  const login = (e) => {
+
+    e.preventDefault();
+    if (username === 'arindam') {
+      auth.login(username);
+      navigate(redirectTo, { replace: true });
+    } else {
+      alert('Wrong username');
+    }
+    
+  }
+  return (
+    <>
+        <h1>Sign In Page</h1>
+        <hr/>
+        <button type="button" onClick={(e) => navigate(-1)}>Back</button>
+        <hr/>
+
+        <p>
+          <input type="text" value={username} onChange={(e) => setUsername(e.target.value)} />
+          <button onClick={login}>Sign In</button>
+        </p>
+    </>
+  )
+}
+
+export default SignIn
+```
+### IsAuth.js
+```js
+import { Navigate, useLocation } from 'react-router-dom'
+import { useAuth } from './Auth'
+
+export const RequireAuth = ({ children }) => {
+    const auth = useAuth()
+    const location = useLocation()
+
+    if (!auth.user) {
+        //return navigate('/login')
+        return <Navigate to="/login" state={{ path: location.pathname }} />
+    }
+  return children;
+}
+```
+
+### Detect auth in Home.jsx
+```js
+import React from 'react'
+import { useNavigate } from 'react-router-dom'
+import { useAuth } from '../middleware/Auth';
+
+const Home = () => {
+  const navigate = useNavigate();
+  const auth = useAuth();
+  const letsSignUp = (e) => {
+    e.preventDefault();
+    navigate('/create-account?aff_id=123&sub_id=900&coupon_code=xxxx123');
+  }
+  return (
+    <>
+        <h1>Home Page</h1>
+        <hr/>
+        {!auth.user && (
+          <button type="button" onClick={(e) => {e.preventDefault(); navigate('/login')}}>SignIn</button>
+        )}
+        {!auth.user && (
+          <button type="button" onClick={letsSignUp}>Create Account</button>
+        )}
+        {auth.user && (
+          <h3>Hi {auth.user}</h3>
+        )}
+
+        
+    </>
+  )
+}
+
+export default Home
+```
